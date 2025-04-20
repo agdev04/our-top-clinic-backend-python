@@ -21,11 +21,11 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Expose FastAPI port
-EXPOSE 3006
+EXPOSE 3007
 
 # Entrypoint to run FastAPI
 # COPY entrypoint.sh /entrypoint.sh
 # RUN chmod +x /entrypoint.sh
 
 # ENTRYPOINT ["/entrypoint.sh"]
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3006"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3007"]
