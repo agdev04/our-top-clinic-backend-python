@@ -1,0 +1,14 @@
+sqlalchemy
+uvicorn
+python-multipart
+python-jose
+pypdfium2
+pytesseract
+mysqlclient
+Pillow
+httpx
+python-dotenv
+fastapi
+celery
+redis
+psycopg2-binary
