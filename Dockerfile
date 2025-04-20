@@ -21,10 +21,11 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Expose FastAPI port
-EXPOSE 3005
+EXPOSE 3006
 
-# Entrypoint to run both FastAPI and Celery worker
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Entrypoint to run FastAPI
+# COPY entrypoint.sh /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+# ENTRYPOINT ["/entrypoint.sh"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3006"]
