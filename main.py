@@ -77,6 +77,8 @@ def verify_clerk_token(request: Request, db = Depends(get_db)):
         if not user.role or user.role not in ["patient", "provider", "admin"]:
             raise HTTPException(status_code=403, detail="Invalid user role")
             
+        # Return user with clerk_uid for backward compatibility
+        user.clerk_uid = uid
         return user
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid Clerk token: {str(e)}")
@@ -87,6 +89,31 @@ def verify_clerk_token(request: Request, db = Depends(get_db)):
 @app.get("/auth-test")
 def auth_test_route(current_user=Depends(verify_clerk_token)):
     return {"message": f"Authenticated! UID: {current_user.uid}, Email: {current_user.email}"}
+
+@app.get("/me")
+def get_user_by_clerk_uid(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.uid == current_user.uid).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user is a patient or provider
+    patient = db.query(Patient).filter(Patient.clerk_user_id == current_user.uid).first()
+    provider = db.query(Provider).filter(Provider.clerk_user_id == current_user.uid).first()
+    
+    response = {
+        "user": user,
+        "type": "user",
+        "record": None
+    }
+    
+    if patient:
+        response["type"] = "patient"
+        response["record"] = patient
+    elif provider:
+        response["type"] = "provider"
+        response["record"] = provider
+    
+    return response
 
 @app.post("/patients/")
 def create_patient(patient_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
