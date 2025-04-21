@@ -197,7 +197,8 @@ def list_patients(
     db: Session = Depends(get_db),
     search: str = None,
     limit: int = 10,
-    offset: int = 0
+    offset: int = 0,
+    status: str = None
 ):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can view all patients")
@@ -210,6 +211,9 @@ def list_patients(
             Patient.last_name.ilike(f"%{search}%") |
             Patient.phone_number.ilike(f"%{search}%")
         )
+    
+    if status and status in ["active", "inactive"]:
+        query = query.filter(Patient.status == status)
     
     total = query.count()
     patients = query.offset(offset).limit(limit).all()
