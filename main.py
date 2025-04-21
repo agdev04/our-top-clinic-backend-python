@@ -192,12 +192,34 @@ def update_service_status(service_id: int, status_data: dict, current_user=Depen
     return service
 
 @app.get("/patients/")
-def list_patients(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+def list_patients(
+    current_user=Depends(verify_clerk_token),
+    db: Session = Depends(get_db),
+    search: str = None,
+    limit: int = 10,
+    offset: int = 0
+):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can view all patients")
     
-    patients = db.query(Patient).all()
-    return patients
+    query = db.query(Patient)
+    
+    if search:
+        query = query.filter(
+            Patient.first_name.ilike(f"%{search}%") |
+            Patient.last_name.ilike(f"%{search}%") |
+            Patient.phone_number.ilike(f"%{search}%")
+        )
+    
+    total = query.count()
+    patients = query.offset(offset).limit(limit).all()
+    
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "patients": patients
+    }
 
 @app.patch("/services/{service_id}/custom-rate")
 def update_service_custom_rate(service_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
