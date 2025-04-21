@@ -191,6 +191,14 @@ def update_service_status(service_id: int, status_data: dict, current_user=Depen
     db.refresh(service)
     return service
 
+@app.get("/patients/")
+def list_patients(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view all patients")
+    
+    patients = db.query(Patient).all()
+    return patients
+
 @app.patch("/services/{service_id}/custom-rate")
 def update_service_custom_rate(service_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     if current_user.role != "admin":
@@ -253,6 +261,26 @@ def create_commission_rate(rate_data: dict, current_user=Depends(verify_clerk_to
     db.commit()
     db.refresh(commission_rate)
     return commission_rate
+
+@app.get("/commission-rates/")
+def list_commission_rates(
+    provider_id: int = None,
+    service_id: int = None,
+    current_user=Depends(verify_clerk_token),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view commission rates")
+    
+    query = db.query(CommissionRate)
+    
+    if provider_id:
+        query = query.filter(CommissionRate.provider_id == provider_id)
+    if service_id:
+        query = query.filter(CommissionRate.service_id == service_id)
+    
+    rates = query.all()
+    return rates
 
 @app.put("/commission-rates/{rate_id}")
 def update_commission_rate(rate_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):

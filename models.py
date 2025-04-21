@@ -97,7 +97,6 @@ class CommissionRate(Base):
     __tablename__ = "commission_rates"
     
     id = Column(Integer, primary_key=True, index=True)
-    provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False)
     rate = Column(Float, nullable=False)
     active = Column(Boolean, default=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
