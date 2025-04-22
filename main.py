@@ -403,34 +403,6 @@ def read_provider(provider_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Provider not found")
     return provider
 
-@app.get("/providers/")
-def search_providers(
-    name: str = None,
-    specialty: str = None,
-    limit: int = 10,
-    offset: int = 0,
-    db: Session = Depends(get_db)
-):
-    query = db.query(Provider)
-    
-    if name:
-        query = query.filter(
-            (Provider.first_name.ilike(f"%{name}%")) | 
-            (Provider.last_name.ilike(f"%{name}%"))
-        )
-    if specialty:
-        query = query.filter(Provider.specialty.ilike(f"%{specialty}%"))
-    
-    total = query.count()
-    providers = query.offset(offset).limit(limit).all()
-    
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "results": providers
-    }
-
 @app.put("/providers/{provider_id}")
 def update_provider(provider_id: int, provider_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
