@@ -151,7 +151,6 @@ def update_patient(patient_id: int, patient_data: dict, current_user=Depends(ver
     return patient
 
 @app.delete("/patients/{patient_id}")
-
 def delete_patient(patient_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
@@ -179,23 +178,6 @@ def update_patient_status(patient_id: int, status_data: dict, current_user=Depen
     db.commit()
     db.refresh(patient)
     return patient
-
-@app.patch("/services/{service_id}/status")
-def update_service_status(service_id: int, status_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can update service status")
-    
-    service = db.query(Service).filter(Service.id == service_id).first()
-    if not service:
-        raise HTTPException(status_code=404, detail="Service not found")
-    
-    if "status" not in status_data or status_data["status"] not in ["active", "inactive"]:
-        raise HTTPException(status_code=400, detail="Status must be either 'active' or 'inactive'")
-    
-    service.status = status_data["status"]
-    db.commit()
-    db.refresh(service)
-    return service
 
 @app.get("/patients/")
 def list_patients(
@@ -268,23 +250,6 @@ def list_providers(
         "providers": providers
     }
 
-@app.patch("/services/{service_id}/custom-rate")
-def update_service_custom_rate(service_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can update custom rates")
-    
-    service = db.query(Service).filter(Service.id == service_id).first()
-    if not service:
-        raise HTTPException(status_code=404, detail="Service not found")
-    
-    if "custom_rate" not in rate_data or not isinstance(rate_data["custom_rate"], (float, int)):
-        raise HTTPException(status_code=400, detail="custom_rate must be a number")
-    
-    service.custom_rate = rate_data["custom_rate"]
-    db.commit()
-    db.refresh(service)
-    return service
-
 @app.post("/register-admin")
 def register_admin(data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     if "admin_password" not in data:
@@ -311,88 +276,6 @@ def create_provider(provider_data: dict, current_user=Depends(verify_clerk_token
     db.refresh(provider)
     db.refresh(current_user)
     return provider
-
-@app.post("/commission-rates/")
-def create_commission_rate(rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can create commission rates")
-    
-    rate_data["admin_set"] = True
-    
-    # If service_id is provided, validate the service exists
-    if "service_id" in rate_data:
-        service = db.query(Service).filter(Service.id == rate_data["service_id"]).first()
-        if not service:
-            raise HTTPException(status_code=404, detail="Service not found")
-    
-    commission_rate = CommissionRate(**rate_data)
-    db.add(commission_rate)
-    db.commit()
-    db.refresh(commission_rate)
-    return commission_rate
-
-@app.get("/commission-rates/")
-def list_commission_rates(
-    provider_id: int = None,
-    service_id: int = None,
-    current_user=Depends(verify_clerk_token),
-    db: Session = Depends(get_db)
-):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can view commission rates")
-    
-    query = db.query(CommissionRate)
-    
-    if provider_id:
-        query = query.filter(CommissionRate.provider_id == provider_id)
-    if service_id:
-        query = query.filter(CommissionRate.service_id == service_id)
-    
-    rates = query.all()
-    return rates
-
-@app.put("/commission-rates/{rate_id}")
-def update_commission_rate(rate_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can update commission rates")
-    
-    commission_rate = db.query(CommissionRate).filter(CommissionRate.id == rate_id).first()
-    if not commission_rate:
-        raise HTTPException(status_code=404, detail="Commission rate not found")
-    
-    for key, value in rate_data.items():
-        setattr(commission_rate, key, value)
-    
-    commission_rate.admin_set = True
-    db.commit()
-    db.refresh(commission_rate)
-    return commission_rate
-
-@app.post("/services/")
-def create_service(service_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.role != "provider":
-        raise HTTPException(status_code=403, detail="Only providers can create services")
-    
-    # Get active commission rate for this provider
-    commission_rate = db.query(CommissionRate).filter(
-        CommissionRate.provider_id == service_data["provider_id"],
-        CommissionRate.active == True
-    ).first()
-    
-    if not commission_rate:
-        raise HTTPException(status_code=400, detail="No active commission rate found for this provider")
-    
-    # Create the service
-    service = Service(**service_data)
-    db.add(service)
-    db.commit()
-    db.refresh(service)
-    
-    # Link the commission rate to the new service
-    commission_rate.service_id = service.id
-    db.commit()
-    
-    return service
 
 @app.get("/providers/{provider_id}")
 def read_provider(provider_id: int, db: Session = Depends(get_db)):
@@ -444,6 +327,40 @@ def update_provider_status(provider_id: int, status_data: dict, current_user=Dep
     db.commit()
     db.refresh(provider)
     return provider
+
+@app.patch("/services/{service_id}/custom-rate")
+def update_service_custom_rate(service_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can update custom rates")
+    
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    if "custom_rate" not in rate_data or not isinstance(rate_data["custom_rate"], (float, int)):
+        raise HTTPException(status_code=400, detail="custom_rate must be a number")
+    
+    service.custom_rate = rate_data["custom_rate"]
+    db.commit()
+    db.refresh(service)
+    return service
+
+@app.patch("/services/{service_id}/status")
+def update_service_status(service_id: int, status_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can update service status")
+    
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    
+    if "status" not in status_data or status_data["status"] not in ["active", "inactive"]:
+        raise HTTPException(status_code=400, detail="Status must be either 'active' or 'inactive'")
+    
+    service.status = status_data["status"]
+    db.commit()
+    db.refresh(service)
+    return service
 
 @app.post("/services/")
 def create_service(service_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
@@ -524,6 +441,43 @@ def delete_service(service_id: int, current_user=Depends(verify_clerk_token), db
     db.commit()
     return {"message": "Service deleted successfully"}
 
+@app.put("/commission-rates/{rate_id}")
+def update_commission_rate(rate_id: int, rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can update commission rates")
+    
+    commission_rate = db.query(CommissionRate).filter(CommissionRate.id == rate_id).first()
+    if not commission_rate:
+        raise HTTPException(status_code=404, detail="Commission rate not found")
+    
+    for key, value in rate_data.items():
+        setattr(commission_rate, key, value)
+    
+    commission_rate.admin_set = True
+    db.commit()
+    db.refresh(commission_rate)
+    return commission_rate
+
+@app.get("/commission-rates/")
+def list_commission_rates(
+    provider_id: int = None,
+    service_id: int = None,
+    current_user=Depends(verify_clerk_token),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view commission rates")
+    
+    query = db.query(CommissionRate)
+    
+    if provider_id:
+        query = query.filter(CommissionRate.provider_id == provider_id)
+    if service_id:
+        query = query.filter(CommissionRate.service_id == service_id)
+    
+    rates = query.all()
+    return rates
+
 @app.post("/commission-rates/")
 def create_commission_rate(rate_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     if current_user.role != "admin":
@@ -542,15 +496,6 @@ def create_commission_rate(rate_data: dict, current_user=Depends(verify_clerk_to
     db.commit()
     db.refresh(rate)
     return rate
-
-@app.get("/commission-rates/")
-def list_commission_rates(provider_id: int = None, service_id: int = None, db: Session = Depends(get_db)):
-    query = db.query(CommissionRate)
-    if provider_id:
-        query = query.filter(CommissionRate.provider_id == provider_id)
-    if service_id:
-        query = query.filter(CommissionRate.service_id == service_id)
-    return query.all()
 
 @app.patch("/commission-rates/{rate_id}/activate")
 def activate_commission_rate(rate_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
