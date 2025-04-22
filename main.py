@@ -533,9 +533,6 @@ def delete_commission_rate(rate_id: int, current_user=Depends(verify_clerk_token
 
 @app.post("/messages/")
 def send_message(message_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can send messages")
-    
     if "receiver_id" not in message_data or "content" not in message_data:
         raise HTTPException(status_code=400, detail="receiver_id and content are required")
     
