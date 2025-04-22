@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 load_dotenv()  # Ensure environment variables are loaded from .env in all environments
 # from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from models import Provider, User, SessionLocal, Patient
+from models import Message, Provider, User, SessionLocal, Patient
 from jose import jwt, JWTError
 import requests
 from sqlalchemy.orm import Session
@@ -554,6 +554,14 @@ def get_messages(receiver_id: int, current_user=Depends(verify_clerk_token), db:
     messages = db.query(Message).filter(
         (Message.receiver_id == receiver_id) | 
         (Message.sender_id == receiver_id)
+    ).all()
+    return messages
+
+@app.get("/parent-messages/")
+def get_parent_messages(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    messages = db.query(Message).filter(
+        (Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id),
+        Message.parent_message_id == None
     ).all()
     return messages
 
