@@ -241,8 +241,6 @@ def list_providers(
     status: str = None,
     specialty: str = None
 ):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can view all providers")
     
     query = db.query(Provider)
     
