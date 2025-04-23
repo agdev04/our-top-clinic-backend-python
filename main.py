@@ -567,7 +567,7 @@ def send_message(message_data: dict, current_user=Depends(verify_clerk_token), d
 
 @app.get("/messages/{receiver_id}")
 def get_messages(receiver_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.id != receiver_id and current_user.role != "admin":
+    if current_user.id != receiver_id:
         raise HTTPException(status_code=403, detail="Not authorized to view these messages")
     
     messages = db.query(Message).filter(
