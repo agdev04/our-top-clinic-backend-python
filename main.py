@@ -632,9 +632,21 @@ def get_parent_messages(current_user=Depends(verify_clerk_token), db: Session = 
             if provider:
                 user_name = f"{provider.first_name} {provider.last_name}"
                 
+        # Get patient or provider ID based on role
+        record_id = None
+        if user.role == "patient":
+            patient = db.query(Patient).filter(Patient.clerk_user_id == user.uid).first()
+            if patient:
+                record_id = patient.id
+        elif user.role == "provider":
+            provider = db.query(Provider).filter(Provider.clerk_user_id == user.uid).first()
+            if provider:
+                record_id = provider.id
+                
         users.append({
             **user.__dict__,
-            "name": user_name
+            "name": user_name,
+            "record_id": record_id
         })
     
     return users
