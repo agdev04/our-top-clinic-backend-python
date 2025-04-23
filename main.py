@@ -497,10 +497,6 @@ def create_commission_rate(rate_data: dict, current_user=Depends(verify_clerk_to
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can create commission rates")
     
-    # Validate required fields
-    if "provider_id" not in rate_data or "service_id" not in rate_data or "rate" not in rate_data:
-        raise HTTPException(status_code=400, detail="provider_id, service_id and rate are required")
-    
     # Ensure rate is between 0 and 1
     if not (0 <= rate_data["rate"] <= 1):
         raise HTTPException(status_code=400, detail="Rate must be between 0 and 1")
