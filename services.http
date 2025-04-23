@@ -1,0 +1,56 @@
+### Get all services
+GET http://localhost:3007/services/
+Authorization: Bearer {{token}}
+
+### Get services by provider ID
+GET http://localhost:3007/services/?provider_id=1
+Authorization: Bearer {{token}}
+
+### Get single service
+GET http://localhost:3007/services/1
+Authorization: Bearer {{token}}
+
+### Create new service
+POST http://localhost:3007/services/
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Consultation",
+  "category": "Medical",
+  "description": "Initial doctor consultation",
+  "price": 100.00,
+  "duration_minutes": 30
+}
+
+### Update service
+PUT http://localhost:3007/services/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Extended Consultation",
+  "duration_minutes": 60
+}
+
+### Delete service
+DELETE http://localhost:3007/services/1
+Authorization: Bearer {{token}}
+
+### Update service status (admin only)
+PATCH http://localhost:3007/services/1/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+### Update custom rate (admin only)
+PATCH http://localhost:3007/services/1/custom-rate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "custom_rate": 0.15
+}

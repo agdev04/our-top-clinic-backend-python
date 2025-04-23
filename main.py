@@ -415,6 +415,18 @@ def list_services(provider_id: int = None, db: Session = Depends(get_db)):
         query = query.filter(Service.provider_id == provider_id)
     return query.all()
 
+@app.get("/my-services/")
+def list_my_services(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    if current_user.role != "provider":
+        raise HTTPException(status_code=403, detail="Only providers can access this endpoint")
+    
+    provider = db.query(Provider).filter(Provider.clerk_user_id == current_user.uid).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider profile not found")
+    
+    services = db.query(Service).filter(Service.provider_id == provider.id).all()
+    return services
+
 @app.put("/services/{service_id}")
 def update_service(service_id: int, service_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     if current_user.role != "provider":
