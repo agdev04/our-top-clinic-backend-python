@@ -387,7 +387,6 @@ def create_service(service_data: dict, current_user=Depends(verify_clerk_token),
     
     # Get active commission rate for this provider
     commission_rate = db.query(CommissionRate).filter(
-        CommissionRate.provider_id == provider.id,
         CommissionRate.active == True
     ).first()
     
