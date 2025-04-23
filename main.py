@@ -299,7 +299,10 @@ def read_provider(provider_id: int, db: Session = Depends(get_db)):
     provider = db.query(Provider).filter(Provider.id == provider_id).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
-    return provider
+    services = db.query(Service).filter(Service.provider_id == provider_id).all()
+    provider_dict = provider.__dict__.copy()
+    provider_dict["services"] = [service.__dict__ for service in services]
+    return provider_dict
 
 @app.put("/providers/{provider_id}")
 def update_provider(provider_id: int, provider_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
