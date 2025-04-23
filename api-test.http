@@ -132,8 +132,7 @@ DELETE http://localhost:3005/providers/1
 Authorization: Bearer AUTH_TOKEN
 
 ### Provider Search
-GET https://z08c48co0k0wk0800ws8kcw8.coolify.agnieve.com/providers
-# ?name=Smith&specialty=Cardiology&limit=5&offset=0
+GET http://localhost:3005/providers?name=&specialty=&limit=5&offset=0&status=inactive
 
 ### Messages CRUD Tests
 

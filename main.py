@@ -123,7 +123,7 @@ def create_patient(patient_data: dict, current_user=Depends(verify_clerk_token),
     db.add(patient)
 
     # Update user role to provider
-    current_user.role = "patient"
+    current_user.role = "provider"
 
     db.commit()
     db.refresh(patient)
@@ -255,6 +255,9 @@ def list_providers(
         provider_dict = provider.__dict__
         provider_dict["user_id"] = user_id
         provider_dict["email"] = email
+        # Add services for each provider
+        services = db.query(Service).filter(Service.provider_id == provider.id).all()
+        provider_dict["services"] = [service.__dict__ for service in services]
         providers.append(provider_dict)
     
     return {
