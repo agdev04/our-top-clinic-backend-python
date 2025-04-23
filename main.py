@@ -600,11 +600,44 @@ def get_messages(receiver_id: int, current_user=Depends(verify_clerk_token), db:
 
 @app.get("/parent-messages/")
 def get_parent_messages(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    messages = db.query(Message).filter(
-        (Message.sender_id == current_user.id) | (Message.receiver_id == current_user.id),
+    # Get all distinct user IDs that have interacted with current_user
+    sender_ids = db.query(Message.receiver_id).filter(
+        Message.sender_id == current_user.id,
         Message.parent_message_id == None
-    ).all()
-    return messages
+    ).distinct().all()
+    
+    receiver_ids = db.query(Message.sender_id).filter(
+        Message.receiver_id == current_user.id,
+        Message.parent_message_id == None
+    ).distinct().all()
+    
+    # Combine and deduplicate user IDs
+    user_ids = set([id[0] for id in sender_ids] + [id[0] for id in receiver_ids])
+    
+    # Get user details for each distinct user
+    users = []
+    for user_id in user_ids:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            continue
+            
+        # Get user name based on role
+        user_name = None
+        if user.role == "patient":
+            patient = db.query(Patient).filter(Patient.clerk_user_id == user.uid).first()
+            if patient:
+                user_name = f"{patient.first_name} {patient.last_name}"
+        elif user.role == "provider":
+            provider = db.query(Provider).filter(Provider.clerk_user_id == user.uid).first()
+            if provider:
+                user_name = f"{provider.first_name} {provider.last_name}"
+                
+        users.append({
+            **user.__dict__,
+            "name": user_name
+        })
+    
+    return users
 
 @app.get("/messages/{message_id}/replies")
 def get_message_replies(message_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
