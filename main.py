@@ -409,10 +409,24 @@ def read_service(service_id: int, db: Session = Depends(get_db)):
 
 @app.get("/services/")
 def list_services(provider_id: int = None, db: Session = Depends(get_db)):
-    query = db.query(Service)
+    query = db.query(Service, Provider).join(Provider, Service.provider_id == Provider.id)
     if provider_id:
         query = query.filter(Service.provider_id == provider_id)
-    return query.all()
+    
+    results = query.all()
+    return [
+        {
+            **service.__dict__,
+            "provider": {
+                "id": provider.id,
+                "first_name": provider.first_name,
+                "last_name": provider.last_name,
+                "specialty": provider.specialty,
+                "status": provider.status
+            }
+        }
+        for service, provider in results
+    ]
 
 @app.get("/my-services/")
 def list_my_services(current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):

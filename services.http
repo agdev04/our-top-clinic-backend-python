@@ -1,6 +1,6 @@
 ### Get all services
-GET http://localhost:3007/services/
-Authorization: Bearer {{token}}
+GET http://localhost:3005/services/
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18ydmNhRk1abHhSdldCUjNuZlRMSGx2MVg4MjIiLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJlbWFpbCI6ImduaWV2ZTEzQGdtYWlsLmNvbSIsImV4cCI6MTc0NTM5MDg3OCwiZnZhIjpbNSwtMV0sImlhdCI6MTc0NTM5MDgxOCwiaXNzIjoiaHR0cHM6Ly9idXJzdGluZy1nbnUtMzMuY2xlcmsuYWNjb3VudHMuZGV2IiwianRpIjoiNjZmYWZmODUyZmUyZDI5ZjVkN2QiLCJsYXN0X3NpZ25faW5fYXQiOjE3NDUzOTA0NzUsIm5iZiI6MTc0NTM5MDgwOCwic2lkIjoic2Vzc18ydzdSOWRpMHZYNGZTekwzTjdOVTNzNFVSMmIiLCJzdWIiOiJ1c2VyXzJ3MEdvQXY0ZjNQSGhKZ2NEa3cyMW5DaDY4dSIsInVzZXJfaWQiOiJ1c2VyXzJ3MEdvQXY0ZjNQSGhKZ2NEa3cyMW5DaDY4dSJ9.JAi_Gq0g9qJ0DHtKF_cnWx5-JnYSgDjkUA5afRx0B81YIjmJnkikK-pniGGLhZGOEGv_1ROmJGKOFnapnQ9hJ25YqqFVfCeZUUVkphVAnWDGvrVpV1T41Wxe05ho6GiYdraYI7qnlKZbawBZz7Ku4TgiIYnboeVtFf__8fGps9nKwfd6A95IDt4kqAEDHhk0BvzF-XPoeiaZ9RB3v3183_FUCHkrxL8bCF94oZybpHbaiGyGilUBoBet-UOxoRJYPy2Zk2vu50IzeTdf3Aw872aoVF46KkI6RGVzsQ8cDMFIcbB_wCIo7pCs8ol_6xTrC8Bs-gDjKSTrxWyStFvJTg
 
 ### Get services by provider ID
 GET http://localhost:3007/services/?provider_id=1
@@ -30,6 +30,9 @@ Content-Type: application/json
 
 {
   "name": "Extended Consultation",
+  "category": "Medical",
+  "description": "Initial doctor consultation",
+  "price": 100.00,
   "duration_minutes": 60
 }
 
