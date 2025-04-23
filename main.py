@@ -191,20 +191,28 @@ def list_patients(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admin can view all patients")
     
-    query = db.query(Patient)
+    query = db.query(Patient, User.id.label("user_id"), User.email).join(User, Patient.clerk_user_id == User.uid)
     
     if search:
         query = query.filter(
             Patient.first_name.ilike(f"%{search}%") |
             Patient.last_name.ilike(f"%{search}%") |
-            Patient.phone_number.ilike(f"%{search}%")
+            Patient.phone_number.ilike(f"%{search}%") |
+            User.email.ilike(f"%{search}%")
         )
     
     if status and status in ["active", "inactive"]:
         query = query.filter(Patient.status == status)
     
     total = query.count()
-    patients = query.offset(offset).limit(limit).all()
+    results = query.offset(offset).limit(limit).all()
+    
+    patients = []
+    for patient, user_id, email in results:
+        patient_dict = patient.__dict__
+        patient_dict["user_id"] = user_id
+        patient_dict["email"] = email
+        patients.append(patient_dict)
     
     return {
         "total": total,
@@ -215,7 +223,6 @@ def list_patients(
 
 @app.get("/providers/")
 def list_providers(
-    current_user=Depends(verify_clerk_token),
     db: Session = Depends(get_db),
     search: str = None,
     limit: int = 10,
@@ -224,7 +231,7 @@ def list_providers(
     specialty: str = None
 ):
     
-    query = db.query(Provider)
+    query = db.query(Provider, User.id.label("user_id"), User.email).join(User, Provider.clerk_user_id == User.uid)
     
     if search:
         query = query.filter(
@@ -241,7 +248,14 @@ def list_providers(
         query = query.filter(Provider.specialty.ilike(f"%{specialty}%"))
     
     total = query.count()
-    providers = query.offset(offset).limit(limit).all()
+    results = query.offset(offset).limit(limit).all()
+    
+    providers = []
+    for provider, user_id, email in results:
+        provider_dict = provider.__dict__
+        provider_dict["user_id"] = user_id
+        provider_dict["email"] = email
+        providers.append(provider_dict)
     
     return {
         "total": total,
@@ -535,6 +549,11 @@ def delete_commission_rate(rate_id: int, current_user=Depends(verify_clerk_token
 def send_message(message_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
     if "receiver_id" not in message_data or "content" not in message_data:
         raise HTTPException(status_code=400, detail="receiver_id and content are required")
+    
+    # Validate receiver exists
+    receiver = db.query(User).filter(User.id == message_data["receiver_id"]).first()
+    if not receiver:
+        raise HTTPException(status_code=404, detail="Receiver not found")
     
     message = Message(
         sender_id=current_user.id,
