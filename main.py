@@ -123,7 +123,7 @@ def create_patient(patient_data: dict, current_user=Depends(verify_clerk_token),
     db.add(patient)
 
     # Update user role to provider
-    current_user.role = "provider"
+    current_user.role = "patient"
 
     db.commit()
     db.refresh(patient)
