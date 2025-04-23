@@ -567,13 +567,15 @@ def send_message(message_data: dict, current_user=Depends(verify_clerk_token), d
 
 @app.get("/messages/{receiver_id}")
 def get_messages(receiver_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
-    if current_user.id != receiver_id:
-        raise HTTPException(status_code=403, detail="Not authorized to view these messages")
-    
+    # Ensure current user is either the sender or receiver of the messages
     messages = db.query(Message).filter(
-        (Message.receiver_id == receiver_id) | 
-        (Message.sender_id == receiver_id)
+        ((Message.receiver_id == receiver_id) & (Message.sender_id == current_user.id)) |
+        ((Message.sender_id == receiver_id) & (Message.receiver_id == current_user.id))
     ).all()
+    
+    if not messages:
+        raise HTTPException(status_code=404, detail="No messages found between these users")
+    
     return messages
 
 @app.get("/parent-messages/")
