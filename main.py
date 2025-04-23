@@ -518,7 +518,6 @@ def activate_commission_rate(rate_id: int, current_user=Depends(verify_clerk_tok
     
     # Deactivate all other rates for this service
     db.query(CommissionRate).filter(
-        CommissionRate.service_id == rate.service_id,
         CommissionRate.active == True
     ).update({"active": False})
     
