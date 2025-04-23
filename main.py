@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 load_dotenv()  # Ensure environment variables are loaded from .env in all environments
 # from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from models import Message, Provider, User, SessionLocal, Patient
+from models import CommissionRate, Message, Provider, User, SessionLocal, Patient
 from jose import jwt, JWTError
 import requests
 from sqlalchemy.orm import Session

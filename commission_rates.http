@@ -1,0 +1,29 @@
+### Commission Rates API Endpoints
+
+# Create a new commission rate (Admin only)
+POST http://localhost:3007/commission-rates/
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "provider_id": 1,
+  "service_id": 1,
+  "rate": 0.2
+}
+
+# List commission rates (Admin only)
+GET http://localhost:3007/commission-rates/
+Authorization: Bearer {{admin_token}}
+
+# Update a commission rate (Admin only)
+PUT http://localhost:3007/commission-rates/1
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "rate": 0.25
+}
+
+# Activate a commission rate (Admin only)
+PATCH http://localhost:3007/commission-rates/1/activate
+Authorization: Bearer {{admin_token}}
