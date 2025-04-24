@@ -117,4 +117,20 @@ class Message(Base):
     receiver = relationship("User", foreign_keys=[receiver_id])
     parent_message = relationship("Message", remote_side=[id], backref="replies")
 
+class Appointment(Base):
+    __tablename__ = "appointments"
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("patients.id"))
+    provider_id = Column(Integer, ForeignKey("providers.id"))
+    service_id = Column(Integer, ForeignKey("services.id"))
+    scheduled_time = Column(DateTime, nullable=False)
+    status = Column(String, default="pending")
+    notes = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    patient = relationship("Patient")
+    provider = relationship("Provider")
+    service = relationship("Service")
+
 Base.metadata.create_all(bind=engine)

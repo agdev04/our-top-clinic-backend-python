@@ -1,0 +1,46 @@
+### Variables
+@baseUrl = http://localhost:3007
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+### Create a new appointment
+POST {{baseUrl}}/appointments
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "provider_id": 1,
+    "service_id": 1,
+    "scheduled_time": "2023-12-31T10:00:00Z",
+    "notes": "Initial consultation"
+}
+
+### List appointments
+GET {{baseUrl}}/appointments
+Authorization: Bearer {{authToken}}
+
+### List appointments with filters
+GET {{baseUrl}}/appointments?start_date=2023-12-01T00:00:00Z&end_date=2023-12-31T23:59:59Z&status=pending&provider_id=1
+Authorization: Bearer {{authToken}}
+
+### Get a specific appointment
+GET {{baseUrl}}/appointments/1
+Authorization: Bearer {{authToken}}
+
+### Update an appointment
+PUT {{baseUrl}}/appointments/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "status": "confirmed",
+    "notes": "Appointment confirmed with patient over phone"
+}
+
+### Cancel an appointment
+POST {{baseUrl}}/appointments/1/cancel
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "reason": "Patient requested cancelation"
+}

@@ -1,0 +1,63 @@
+### Variables
+@baseUrl = http://localhost:3007
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+### Create a new service (provider only)
+POST {{baseUrl}}/services
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Skin Consultation",
+    "description": "Initial skin evaluation and treatment plan.",
+    "price": 150.00,
+    "duration_minutes": 60,
+    "status": "active"
+}
+
+### Get a specific service
+GET {{baseUrl}}/services/1
+
+### List all services
+GET {{baseUrl}}/services
+
+### List services by provider
+GET {{baseUrl}}/services?provider_id=1
+
+### List my services (provider only)
+GET {{baseUrl}}/services/my-services
+Authorization: Bearer {{authToken}}
+
+### Update a service (provider only)
+PUT {{baseUrl}}/services/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Comprehensive Skin Consultation",
+    "description": "Detailed skin evaluation with personalized treatment plan.",
+    "price": 175.00,
+    "duration_minutes": 75
+}
+
+### Delete a service (provider only)
+DELETE {{baseUrl}}/services/1
+Authorization: Bearer {{authToken}}
+
+### Update service custom rate (admin only)
+PATCH {{baseUrl}}/services/1/custom-rate
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "custom_rate": 0.25
+}
+
+### Update service status (admin only)
+PATCH {{baseUrl}}/services/1/status
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "status": "inactive"
+}

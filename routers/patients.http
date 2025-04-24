@@ -1,0 +1,54 @@
+### Variables
+@baseUrl = http://localhost:3007
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+### Create a new patient
+POST {{baseUrl}}/patients
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "first_name": "John",
+    "last_name": "Doe",
+    "date_of_birth": "1990-01-01",
+    "phone_number": "123-456-7890",
+    "address": "123 Main St, Anytown, USA",
+    "status": "active"
+}
+
+### Get a specific patient
+GET {{baseUrl}}/patients/1
+Authorization: Bearer {{authToken}}
+
+### Update a patient
+PUT {{baseUrl}}/patients/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "first_name": "John",
+    "last_name": "Smith",
+    "phone_number": "123-456-7890",
+    "address": "456 Oak St, Anytown, USA"
+}
+
+### Delete a patient
+DELETE {{baseUrl}}/patients/1
+Authorization: Bearer {{authToken}}
+
+### Update patient status
+PATCH {{baseUrl}}/patients/1/status
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "status": "inactive"
+}
+
+### List all patients (admin only)
+GET {{baseUrl}}/patients
+Authorization: Bearer {{authToken}}
+
+### List patients with filters (admin only)
+GET {{baseUrl}}/patients?search=John&limit=10&offset=0&status=active
+Authorization: Bearer {{authToken}}

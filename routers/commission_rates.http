@@ -1,0 +1,23 @@
+### Variables
+@baseUrl = http://localhost:3007
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+### Update a commission rate (admin only)
+PUT {{baseUrl}}/commission-rates/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "rate": 0.3,
+    "name": "Standard Commission",
+    "description": "Standard provider commission rate",
+    "active": true
+}
+
+### List all commission rates (admin only)
+GET {{baseUrl}}/commission-rates
+Authorization: Bearer {{authToken}}
+
+### List commission rates with filters (admin only)
+GET {{baseUrl}}/commission-rates?provider_id=1&service_id=2
+Authorization: Bearer {{authToken}}

@@ -1,0 +1,52 @@
+### Variables
+@baseUrl = http://localhost:3007
+@authToken = eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18ydmNhRk1abHhSdldCUjNuZlRMSGx2MVg4MjIiLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJlbWFpbCI6ImRldkBhZ25pZXZlLmNvbSIsImV4cCI6MTc0NTQ4Njk0NywiZnZhIjpbNDE0LC0xXSwiaWF0IjoxNzQ1NDg2ODg3LCJpc3MiOiJodHRwczovL2J1cnN0aW5nLWdudS0zMy5jbGVyay5hY2NvdW50cy5kZXYiLCJqdGkiOiI3ZDVjYjFjOWU1ZGU0ZTQ1N2M3ZSIsImxhc3Rfc2lnbl9pbl9hdCI6MTc0NTQ2MjAxMywibmJmIjoxNzQ1NDg2ODc3LCJzaWQiOiJzZXNzXzJ3OW05Y0pCT1hBdTc1TTRaZmZFem1LTDVhRyIsInN1YiI6InVzZXJfMncybWJ0R1RsWktSb25FbFE1Smp1OTRmbXRlIiwidXNlcl9pZCI6InVzZXJfMncybWJ0R1RsWktSb25FbFE1Smp1OTRmbXRlIn0.kL03KaAV3CsZ7aXW6uJ0ql6zCENMenk9g5p5FxCq-fHou41c7ty1_JLAlZly5tCDNOuQC26Ek7DBHoEdvuDPwmeVTeeBHlIUND5p2Xq--_1DIeHOx_6PPpXIUyMhCSUu48CinzUvJ_4YcNDXfstNmVjmf81WtKznI9MHeW_ezmiafWo_S4uPNDbpw4Piur8E71B6YHUsqsPoue38zkrDCnaYDiUxqlA7pinPWC37h6Q-ajHoFm-hRho6eBbGR8e6dLvkKZ1CAnTHSYNvaJC_8VKEm2bqgrWbIbkveY1AD0HNmPPObnyuXWjOHExvN6BX0TL8KryDRUCYBBKc4L5yGg
+
+### Create a new provider
+POST {{baseUrl}}/providers
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "specialty": "Dermatology",
+    "phone_number": "123-456-7890",
+    "bio": "Board certified dermatologist with 10 years of experience.",
+    "status": "active"
+}
+
+### Get a specific provider
+GET {{baseUrl}}/providers/6
+
+### Update a provider
+PUT {{baseUrl}}/providers/6
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "specialty": "Cosmetic Dermatology",
+    "phone_number": "123-456-7890",
+    "bio": "Board certified dermatologist with 10 years of experience specializing in cosmetic procedures."
+}
+
+### Delete a provider
+DELETE {{baseUrl}}/providers/1
+Authorization: Bearer {{authToken}}
+
+### Update provider status (admin only)
+PATCH {{baseUrl}}/providers/1/status
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "status": "inactive"
+}
+
+### List all providers
+GET {{baseUrl}}/providers
+
+### List providers with filters
+GET {{baseUrl}}/providers?search=Jane&limit=10&offset=0&status=active&specialty=Dermatology

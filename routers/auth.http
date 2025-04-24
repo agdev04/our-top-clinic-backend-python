@@ -1,0 +1,20 @@
+### Variables
+@baseUrl = http://localhost:3007
+@authToken = eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18ydmNhRk1abHhSdldCUjNuZlRMSGx2MVg4MjIiLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJlbWFpbCI6ImRldkBhZ25pZXZlLmNvbSIsImV4cCI6MTc0NTQ4NTc3NSwiZnZhIjpbMzk1LC0xXSwiaWF0IjoxNzQ1NDg1NzE1LCJpc3MiOiJodHRwczovL2J1cnN0aW5nLWdudS0zMy5jbGVyay5hY2NvdW50cy5kZXYiLCJqdGkiOiI5MjRlOTYwMmVlZTRmYzAzYTdkYSIsImxhc3Rfc2lnbl9pbl9hdCI6MTc0NTQ2MjAxMywibmJmIjoxNzQ1NDg1NzA1LCJzaWQiOiJzZXNzXzJ3OW05Y0pCT1hBdTc1TTRaZmZFem1LTDVhRyIsInN1YiI6InVzZXJfMncybWJ0R1RsWktSb25FbFE1Smp1OTRmbXRlIiwidXNlcl9pZCI6InVzZXJfMncybWJ0R1RsWktSb25FbFE1Smp1OTRmbXRlIn0.hyneyEEKqjfCpjz5aGttjEyTg1brrao971ZQkOhCuqYeq3sLo8yvBsU2xNn9SqdcqNT5P6oMDPZPCanYxEr7bsQ_cOsMG6L1NX_8L4i0x9qtwEHb8fl8jTi6M8COYA5TEb64VhkXu95geWRdYFNTkCIi3AnP0u1axGaAhyrDmJytON3NtH1RW-NLET54nP-6hNC1hDTDD9iuJpbjbWtp_8CWU2pJQwBA4kjxycSPupv_Jw2lW5WBhzy5n9oifvaifqRL8RSVlQHvUm3XsLasPqdSK8VdaiLQDYpkrQrhKK6NJJ73duzOlFfxou8saZx1FBFxc-mQNyzZ6jV9bogN_w
+
+### Authentication test endpoint
+GET {{baseUrl}}/auth-test
+Authorization: Bearer {{authToken}}
+
+### Get current user information
+GET {{baseUrl}}/me
+Authorization: Bearer {{authToken}}
+
+### Register as admin
+POST {{baseUrl}}/register-admin
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "admin_password": "YOUR_ADMIN_PASSWORD"
+}

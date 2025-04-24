@@ -1,34 +1,38 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from models import User, Patient, Provider
+from routers import auth, patients, providers, services, commission_rates, appointments
+import requests
+from jose import jwt, JWTError
 
 load_dotenv()  # Ensure environment variables are loaded from .env in all environments
-# from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from models import CommissionRate, Message, Provider, Service, User, SessionLocal, Patient
-from jose import jwt, JWTError
-import requests
-from sqlalchemy.orm import Session
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Should restrict this in production
+    allow_origins=["*"],  # Should restrict this in production 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- Clerk JWKS Setup ---
-CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL")  # Set this to your actual JWKS URL
+# Include routers
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(patients.router, prefix="/patients", tags=["patients"])
+app.include_router(providers.router, prefix="/providers", tags=["providers"])
+app.include_router(services.router, prefix="/services", tags=["services"])
+app.include_router(commission_rates.router, prefix="/commission-rates", tags=["commission-rates"])
+app.include_router(appointments.router, prefix="/appointments", tags=["appointments"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Database session dependency imported from database module
+from database import get_db
+
+# Clerk JWKS Setup
+CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL")  # Set this to your actual JWKS URL
 
 def get_jwks():
     response = requests.get(CLERK_JWKS_URL)
@@ -697,3 +701,136 @@ def reply_to_message(message_id: int, message_data: dict, current_user=Depends(v
     db.commit()
     db.refresh(message)
     return message
+
+
+@app.post("/appointments/")
+def create_appointment(appointment_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
+    # Verify that the user is a patient
+    patient = db.query(Patient).filter(Patient.clerk_user_id == current_user.uid).first()
+    if not patient:
+        raise HTTPException(status_code=403, detail="Only patients can create appointments")
+    
+    # Verify that the service exists and belongs to the specified provider
+    service = db.query(Service).filter(
+        Service.id == appointment_data["service_id"],
+        Service.provider_id == appointment_data["provider_id"],
+        Service.status == "active"
+    ).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found or inactive")
+    
+    # Convert scheduled_time string to datetime object
+    try:
+        scheduled_time = datetime.datetime.fromisoformat(appointment_data["scheduled_time"].replace('Z', '+00:00'))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid datetime format")
+    
+    # Check for scheduling conflicts
+    service_duration = datetime.timedelta(minutes=service.duration_minutes)
+    appointment_end_time = scheduled_time + service_duration
+    
+    existing_appointment = db.query(Appointment).filter(
+        Appointment.provider_id == appointment_data["provider_id"],
+        Appointment.status.in_(["pending", "confirmed"]),
+        and_(
+            Appointment.scheduled_time < appointment_end_time,
+            scheduled_time < Appointment.scheduled_time + datetime.timedelta(minutes=Appointment.service.duration_minutes)
+        )
+    ).first()
+    
+    if existing_appointment:
+        raise HTTPException(status_code=400, detail="Provider is not available at this time")
+    
+    # Create the appointment
+    new_appointment = Appointment(
+        patient_id=patient.id,
+        provider_id=appointment_data["provider_id"],
+        service_id=appointment_data["service_id"],
+        scheduled_time=scheduled_time,
+        notes=appointment_data.get("notes", "")
+    )
+    
+    db.add(new_appointment)
+    db.commit()
+    db.refresh(new_appointment)
+    return new_appointment
+
+@app.get("/appointments/")
+def list_appointments(
+    current_user=Depends(verify_clerk_token),
+    db: Session = Depends(get_db),
+    status: str = None,
+    from_date: str = None,
+    to_date: str = None
+):
+    # Base query depending on user role
+    if current_user.role == "patient":
+        patient = db.query(Patient).filter(Patient.clerk_user_id == current_user.uid).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient profile not found")
+        query = db.query(Appointment).filter(Appointment.patient_id == patient.id)
+    elif current_user.role == "provider":
+        provider = db.query(Provider).filter(Provider.clerk_user_id == current_user.uid).first()
+        if not provider:
+            raise HTTPException(status_code=404, detail="Provider profile not found")
+        query = db.query(Appointment).filter(Appointment.provider_id == provider.id)
+    elif current_user.role == "admin":
+        query = db.query(Appointment)
+    else:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    # Apply filters
+    if status:
+        query = query.filter(Appointment.status == status)
+    
+    if from_date:
+        try:
+            from_datetime = datetime.datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+            query = query.filter(Appointment.scheduled_time >= from_datetime)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid from_date format")
+    
+    if to_date:
+        try:
+            to_datetime = datetime.datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+            query = query.filter(Appointment.scheduled_time <= to_datetime)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid to_date format")
+    
+    # Execute query and return results
+    appointments = query.all()
+    return appointments
+
+@app.patch("/appointments/{appointment_id}/status")
+def update_appointment_status(
+    appointment_id: int,
+    status_data: dict,
+    current_user=Depends(verify_clerk_token),
+    db: Session = Depends(get_db)
+):
+    if "status" not in status_data:
+        raise HTTPException(status_code=400, detail="Status is required")
+    
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Check authorization
+    if current_user.role == "patient":
+        patient = db.query(Patient).filter(Patient.clerk_user_id == current_user.uid).first()
+        if not patient or appointment.patient_id != patient.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        # Patients can only cancel their appointments
+        if status_data["status"] != "cancelled":
+            raise HTTPException(status_code=403, detail="Patients can only cancel appointments")
+    elif current_user.role == "provider":
+        provider = db.query(Provider).filter(Provider.clerk_user_id == current_user.uid).first()
+        if not provider or appointment.provider_id != provider.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+    elif current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    appointment.status = status_data["status"]
+    db.commit()
+    db.refresh(appointment)
+    return appointment
