@@ -83,6 +83,33 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
             elif action == 'leave':
                 redis_client.srem(redis_key, user_id)
                 redis_client.hdel(f"connections:{appointment_id}", connection_id)
+            elif action == 'offer':
+                target_user = data.get('target_user')
+                if target_user and isinstance(target_user, str):
+                    await websocket.send_json({
+                        'type': 'webrtc_offer',
+                        'from': user_id,
+                        'to': target_user,
+                        'sdp': data.get('sdp')
+                    })
+            elif action == 'answer':
+                target_user = data.get('target_user')
+                if target_user and isinstance(target_user, str):
+                    await websocket.send_json({
+                        'type': 'webrtc_answer',
+                        'from': user_id,
+                        'to': target_user,
+                        'sdp': data.get('sdp')
+                    })
+            elif action == 'ice_candidate':
+                target_user = data.get('target_user')
+                if target_user and isinstance(target_user, str):
+                    await websocket.send_json({
+                        'type': 'webrtc_ice_candidate',
+                        'from': user_id,
+                        'to': target_user,
+                        'candidate': data.get('candidate')
+                    })
             
             # Broadcast presence updates to all connected clients
             current_users = [user.decode('utf-8') for user in redis_client.smembers(redis_key)]

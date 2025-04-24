@@ -1,0 +1,28 @@
+### WebSocket Test Cases for WebRTC Signaling
+
+# Test WebSocket connection
+WEBSOCKET ws://localhost:8000/ws/presence/123
+
+# Test offer message
+{
+  "user_id": "user1",
+  "action": "offer",
+  "target_user": "user2",
+  "sdp": "v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\n..."
+}
+
+# Test answer message
+{
+  "user_id": "user2",
+  "action": "answer",
+  "target_user": "user1",
+  "sdp": "v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\n..."
+}
+
+# Test ICE candidate message
+{
+  "user_id": "user1",
+  "action": "ice_candidate",
+  "target_user": "user2",
+  "candidate": "candidate:1 1 UDP 123456 192.168.1.1 12345 typ host"
+}
