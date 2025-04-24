@@ -53,7 +53,7 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str):
         await websocket.close()
 
 # Include routers
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(auth.router, prefix="", tags=["auth"])
 app.include_router(patients.router, prefix="/patients", tags=["patients"])
 app.include_router(providers.router, prefix="/providers", tags=["providers"])
 app.include_router(services.router, prefix="/services", tags=["services"])
