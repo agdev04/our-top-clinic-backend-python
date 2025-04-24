@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models import User, Provider, Service, Appointment
+from models import User, Provider, Service, Appointment, Patient
 from .auth import verify_clerk_token
 from .db import get_db
 from typing import Optional
@@ -27,11 +27,14 @@ def read_provider(provider_id: int, db: Session = Depends(get_db)):
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
     services = db.query(Service).filter(Service.provider_id == provider_id).all()
-    appointments = db.query(Appointment).filter(Appointment.provider_id == provider_id).all()
+    appointments = db.query(Appointment, Patient).join(Patient, Appointment.patient_id == Patient.id).filter(Appointment.provider_id == provider_id).all()
     
     provider_dict = provider.__dict__.copy()
     provider_dict["services"] = [service.__dict__ for service in services]
-    provider_dict["appointments"] = [appointment.__dict__ for appointment in appointments]
+    provider_dict["appointments"] = [{
+        **appointment.__dict__,
+        "patient": patient.__dict__
+    } for appointment, patient in appointments]
     return provider_dict
 
 @router.put("/{provider_id}")
