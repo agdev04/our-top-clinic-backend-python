@@ -5,7 +5,7 @@ from models import Patient, Provider, Service, Appointment
 from .auth import verify_clerk_token
 from .db import get_db
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ def create_appointment(appointment_data: dict, current_user=Depends(verify_clerk
         raise HTTPException(status_code=400, detail="Invalid scheduled_time format")
     
     # Ensure appointment is not in the past
-    if scheduled_time < datetime.utcnow():
+    if scheduled_time < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Cannot schedule appointments in the past")
     
     # Get the service to check duration
@@ -98,17 +98,26 @@ def list_appointments(
 ):
     # Base query depending on user role
     if current_user.role == "admin":
-        query = db.query(Appointment)
+        query = db.query(Appointment, Patient, Provider, Service).\
+            join(Patient, Appointment.patient_id == Patient.id).\
+            join(Provider, Appointment.provider_id == Provider.id).\
+            join(Service, Appointment.service_id == Service.id)
     elif current_user.role == "provider":
         provider = db.query(Provider).filter(Provider.clerk_user_id == current_user.uid).first()
         if not provider:
             raise HTTPException(status_code=404, detail="Provider profile not found")
-        query = db.query(Appointment).filter(Appointment.provider_id == provider.id)
+        query = db.query(Appointment, Patient, Service).\
+            join(Patient, Appointment.patient_id == Patient.id).\
+            join(Service, Appointment.service_id == Service.id).\
+            filter(Appointment.provider_id == provider.id)
     else:  # patient
         patient = db.query(Patient).filter(Patient.clerk_user_id == current_user.uid).first()
         if not patient:
             raise HTTPException(status_code=404, detail="Patient profile not found")
-        query = db.query(Appointment).filter(Appointment.patient_id == patient.id)
+        query = db.query(Appointment, Provider, Service).\
+            join(Provider, Appointment.provider_id == Provider.id).\
+            join(Service, Appointment.service_id == Service.id).\
+            filter(Appointment.patient_id == patient.id)
     
     # Apply filters
     if start_date:
@@ -132,7 +141,27 @@ def list_appointments(
         query = query.filter(Appointment.provider_id == provider_id)
     
     # Execute query and return results
-    appointments = query.all()
+    results = query.all()
+    
+    appointments = []
+    for appointment, *related_entities in results:
+        appointment_dict = appointment.__dict__
+        if current_user.role == "admin":
+            patient, provider, service = related_entities
+            appointment_dict["patient"] = patient.__dict__
+            appointment_dict["provider"] = provider.__dict__
+            appointment_dict["service"] = service.__dict__
+        elif current_user.role == "provider":
+            patient, service = related_entities
+            appointment_dict["patient"] = patient.__dict__
+            appointment_dict["service"] = service.__dict__
+        else:  # patient
+            provider, service = related_entities
+            appointment_dict["provider"] = provider.__dict__
+            appointment_dict["service"] = service.__dict__
+        
+        appointments.append(appointment_dict)
+    
     return appointments
 
 @router.get("/{appointment_id}")

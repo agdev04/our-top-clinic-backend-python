@@ -1,6 +1,6 @@
 ### Variables
 @baseUrl = http://localhost:3007
-@authToken = YOUR_AUTH_TOKEN_HERE
+@authToken = eyJhbGciOiJSUzI1NiIsImNhdCI6ImNsX0I3ZDRQRDExMUFBQSIsImtpZCI6Imluc18ydmNhRk1abHhSdldCUjNuZlRMSGx2MVg4MjIiLCJ0eXAiOiJKV1QifQ.eyJhenAiOiJodHRwOi8vbG9jYWxob3N0OjUxNzMiLCJlbWFpbCI6ImRldkBhZ25pZXZlLmNvbSIsImV4cCI6MTc0NTQ5NjM0MSwiZnZhIjpbMTEyLC0xXSwiaWF0IjoxNzQ1NDk2MjgxLCJpc3MiOiJodHRwczovL2J1cnN0aW5nLWdudS0zMy5jbGVyay5hY2NvdW50cy5kZXYiLCJqdGkiOiI5ZjY4NzdkNTNmMzg3Mzg5MWVkOCIsImxhc3Rfc2lnbl9pbl9hdCI6MTc0NTQ4OTUzOCwibmJmIjoxNzQ1NDk2MjcxLCJzaWQiOiJzZXNzXzJ3QWZ3ZmQ2YWd6NWhMb2NKMlVCTFJLZU1TTSIsInN1YiI6InVzZXJfMncybWJ0R1RsWktSb25FbFE1Smp1OTRmbXRlIiwidXNlcl9pZCI6InVzZXJfMncybWJ0R1RsWktSb25FbFE1Smp1OTRmbXRlIn0.VG0vG3F_NqMW1JqcmdaFuVgFaG0PL7edzxH2tfm25_FxsHvEYGUT6ZKDOt8GhUlH2vrqHnAV8QXkABSD7UHBDpSVQGAk1xrPJszrwcnLQLR4HzvVLS9HYGVozTzW9YnBix01CgVsHbBgMsFriNbpaaJlSRx_Uk3YVmzLxz5w3fjtk-EvAkrle9ojzU3RQFH76qWNkTUzuHT2_T78swexxBvMlsBIK3C2K5kMTx4Rb7bBvBh8ZjBqT-pcC71nzm-AZeT4Og1s6P8vpu2amDIVNq1Lis4CSkEb14fijfbbTUFcLs2GFeCOqGGN4RAYHWD3tvC-U3aPXvdWnd2DJVCxcw
 
 ### Create a new appointment
 POST {{baseUrl}}/appointments
@@ -8,9 +8,9 @@ Content-Type: application/json
 Authorization: Bearer {{authToken}}
 
 {
-    "provider_id": 1,
-    "service_id": 1,
-    "scheduled_time": "2023-12-31T10:00:00Z",
+    "provider_id": 6,
+    "service_id": 3,
+    "scheduled_time": "2025-12-31T10:00:00Z",
     "notes": "Initial consultation"
 }
 
