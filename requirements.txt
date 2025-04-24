@@ -14,3 +14,4 @@ redis
 psycopg2-binary
 requests
 gunicorn
+websockets

@@ -1,5 +1,5 @@
 ### Connect to WebSocket
-WEBSOCKET ws://localhost:8000/ws/presence/12345
+WEBSOCKET ws://localhost:3007/ws/presence/12345
 
 ### Send join message
 {

@@ -1,7 +1,12 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket
+import time
+import json
+from fastapi import FastAPI, WebSocket, Depends
+from models import Appointment
 from fastapi.middleware.cors import CORSMiddleware
 import redis
+from sqlalchemy.orm import Session
+from routers.db import get_db
 from fastapi.websockets import WebSocketDisconnect
 from routers import auth, patients, providers, services, commission_rates, appointments
 
@@ -27,30 +32,70 @@ app.add_middleware(
 
 # WebSocket endpoint for user presence
 @app.websocket("/ws/presence/{appointment_id}")
-async def websocket_presence(websocket: WebSocket, appointment_id: str):
-    await websocket.accept()
-    redis_key = f"presence:{appointment_id}"
+async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Session = Depends(get_db)):
+    if not websocket.url.path.startswith("/ws/presence/"):
+        await websocket.close(code=4001)
+        return
+    if not appointment_id or not appointment_id.isdigit():
+        await websocket.close(code=4000)
+        return
+    # Check if appointment exists in database
+    appointment = db.query(Appointment).filter(Appointment.id == int(appointment_id)).first()
+    if not appointment:
+        await websocket.close(code=4002)
+        return
+    try:
+        await websocket.accept()
+        redis_key = f"presence:{appointment_id}"
+        # Initialize connection tracking
+        connection_id = f"{appointment_id}:{websocket.client.host}:{websocket.client.port}"
+        # Track connection with timestamp
+        redis_client.hset(f"connections:{appointment_id}", connection_id, json.dumps({
+            "host": websocket.client.host,
+            "timestamp": int(time.time())
+        }))
+        # Set expiration for presence data
+        redis_client.expire(redis_key, 86400) # 24 hours
+    except Exception as e:
+        print(f"WebSocket connection failed: {str(e)}")
+        await websocket.close(code=5000)
+        return
     
     try:
         while True:
-            data = await websocket.receive_text()
-            user_id = data.get('user_id')
-            action = data.get('action')
+            try:
+                data = await websocket.receive_json()
+                user_id = data.get('user_id')
+                action = data.get('action')
+                if not user_id or not action:
+                    await websocket.send_json({'error': 'Missing required fields'})
+                    continue
+                if not isinstance(user_id, str) or not isinstance(action, str):
+                    await websocket.send_json({'error': 'Invalid data types'})
+                    continue
+            except ValueError:
+                await websocket.send_json({'error': 'Invalid JSON data'})
+                continue
             
             if action == 'join':
                 redis_client.sadd(redis_key, user_id)
+                redis_client.hset(f"connections:{appointment_id}", connection_id, json.dumps(user_id))
             elif action == 'leave':
                 redis_client.srem(redis_key, user_id)
+                redis_client.hdel(f"connections:{appointment_id}", connection_id)
             
             # Broadcast presence updates to all connected clients
             current_users = redis_client.smembers(redis_key)
             await websocket.send_json({
                 'type': 'presence_update',
-                'users': list(current_users)
+                'users': list(current_users),
+                'timestamp': int(time.time())
             })
     except WebSocketDisconnect:
         redis_client.srem(redis_key, user_id)
+        redis_client.hdel(f"connections:{appointment_id}", connection_id)
         await websocket.close()
+        print(f"Client disconnected: {connection_id}")
 
 # Include routers
 app.include_router(auth.router, prefix="", tags=["auth"])
