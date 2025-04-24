@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from models import User, Patient, Provider
+from models import Message, User, Patient, Provider
 from routers import auth, patients, providers, services, commission_rates, appointments
 import requests
 from jose import jwt, JWTError
