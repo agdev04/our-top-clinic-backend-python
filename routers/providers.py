@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models import User, Provider, Service, Appointment, Patient
+from models import User, Provider, Service, Appointment
 from .auth import verify_clerk_token
 from .db import get_db
 from typing import Optional

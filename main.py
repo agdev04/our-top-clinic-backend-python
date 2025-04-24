@@ -14,12 +14,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://b8ok804ocwcos8g0ww08k4-prod.onrender.com"],
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
     allow_headers=["*"],
-    preflight_max_age=600,  # Cache preflight response for 10 minutes
-    expose_headers=["Content-Type", "Authorization"]
+    expose_headers=["*"]
 )
 
 # Include routers
