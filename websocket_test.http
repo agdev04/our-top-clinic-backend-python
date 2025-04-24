@@ -1,0 +1,20 @@
+### Connect to WebSocket
+WEBSOCKET ws://localhost:8000/ws/presence/12345
+
+### Send join message
+{
+  "user_id": "user_123",
+  "action": "join"
+}
+
+### Send leave message
+{
+  "user_id": "user_123",
+  "action": "leave"
+}
+
+### Expected server response
+{
+  "type": "presence_update",
+  "users": ["user_123"]
+}
