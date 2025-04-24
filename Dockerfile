@@ -43,4 +43,4 @@ COPY . .
 EXPOSE 3007
 
 # Run the application using Gunicorn
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--host", "0.0.0.0", "--port", "3007"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:3007", "main:app"]
