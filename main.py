@@ -14,9 +14,9 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Should restrict this in production 
+    allow_origins=["http://localhost:5173", "https://b8ok804ocwcos8g0ww08k4-prod.onrender.com"], # Added your frontend origin and production domain
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], # Explicitly included OPTIONS
     allow_headers=["*"],
 )
 
