@@ -85,7 +85,7 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
                 redis_client.hdel(f"connections:{appointment_id}", connection_id)
             
             # Broadcast presence updates to all connected clients
-            current_users = redis_client.smembers(redis_key)
+            current_users = [user.decode('utf-8') for user in redis_client.smembers(redis_key)]
             await websocket.send_json({
                 'type': 'presence_update',
                 'users': list(current_users),
