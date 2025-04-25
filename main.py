@@ -8,7 +8,7 @@ import redis
 from sqlalchemy.orm import Session
 from routers.db import get_db
 from fastapi.websockets import WebSocketDisconnect
-from routers import auth, patients, providers, services, commission_rates, appointments
+from routers import auth, messages, patients, providers, services, commission_rates, appointments
 
 load_dotenv()  # Ensure environment variables are loaded from .env in all environments
 
@@ -131,3 +131,4 @@ app.include_router(providers.router, prefix="/providers", tags=["providers"])
 app.include_router(services.router, prefix="/services", tags=["services"])
 app.include_router(commission_rates.router, prefix="/commission-rates", tags=["commission-rates"])
 app.include_router(appointments.router, prefix="/appointments", tags=["appointments"])
+app.include_router(messages.router, prefix="/messages", tags=["messages"])
