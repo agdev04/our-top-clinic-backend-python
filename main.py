@@ -96,6 +96,7 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
             elif action == 'answer':
                 target_user = data.get('target_user')
                 if target_user and isinstance(target_user, str):
+                    websocket.remote_description_set = True
                     await websocket.send_json({
                         'type': 'webrtc_answer',
                         'from': user_id,
@@ -113,6 +114,10 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
                 # Verify connection state before processing ICE candidate
                 if websocket.application_state != WebSocketState.CONNECTED:
                     await websocket.send_json({'error': 'Cannot add ICE candidate - connection closed'})
+                    continue
+                # Check if remote description is set before processing ICE candidates
+                if not hasattr(websocket, 'remote_description_set'):
+                    await websocket.send_json({'error': 'Cannot process ICE candidate - remote description not set'})
                     continue
                 await websocket.send_json({
                     'type': 'webrtc_ice_candidate',
