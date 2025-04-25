@@ -1,28 +1,28 @@
-### WebSocket Test Cases for WebRTC Signaling
+### WebSocket Test - Appointment Session
 
-# Test WebSocket connection
-WEBSOCKET ws://localhost:8000/ws/presence/123
+### Connect to WebSocket
+WEBSOCKET ws://localhost:8000/ws/1
 
-# Test offer message
-{
-  "user_id": "user1",
-  "action": "offer",
-  "target_user": "user2",
-  "sdp": "v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\n..."
-}
+### Verify initial peer ID assignment
+> {%
+    const response = await websocket.receive();
+    client.test("Should receive peer ID", function() {
+        client.assert(response.type === "your_peer_id", "Expected peer ID message");
+        client.assert(response.peer_id.length > 0, "Peer ID should not be empty");
+        client.global.set("peerId", response.peer_id);
+    });
+%}
 
-# Test answer message
-{
-  "user_id": "user2",
-  "action": "answer",
-  "target_user": "user1",
-  "sdp": "v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\n..."
-}
+### Verify peer IDs update when another client connects
+> {%
+    const update = await websocket.receive();
+    client.test("Should receive peer IDs update", function() {
+        client.assert(update.type === "peer_ids_update", "Expected peer IDs update");
+        client.assert(update.peer_ids.includes(client.global.get("peerId")), "Should include our peer ID");
+    });
+%}
 
-# Test ICE candidate message
-{
-  "user_id": "user1",
-  "action": "ice_candidate",
-  "target_user": "user2",
-  "candidate": "candidate:1 1 UDP 123456 192.168.1.1 12345 typ host"
-}
+### Disconnect
+> {%
+    websocket.close();
+%}
