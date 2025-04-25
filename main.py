@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 import time
 import json
-from fastapi import FastAPI, WebSocket, Depends, WebSocketState
+from fastapi import FastAPI, WebSocket, Depends
+from fastapi.websockets import WebSocketState
 from models import Appointment
 from fastapi.middleware.cors import CORSMiddleware
 import redis
