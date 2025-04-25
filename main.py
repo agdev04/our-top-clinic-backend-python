@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import time
 import json
-from fastapi import FastAPI, WebSocket, Depends
+from fastapi import FastAPI, WebSocket, Depends, WebSocketState
 from models import Appointment
 from fastapi.middleware.cors import CORSMiddleware
 import redis
@@ -103,13 +103,22 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
                     })
             elif action == 'ice_candidate':
                 target_user = data.get('target_user')
-                if target_user and isinstance(target_user, str):
-                    await websocket.send_json({
-                        'type': 'webrtc_ice_candidate',
-                        'from': user_id,
-                        'to': target_user,
-                        'candidate': data.get('candidate')
-                    })
+                if not target_user or not isinstance(target_user, str):
+                    await websocket.send_json({'error': 'Invalid target user for ICE candidate'})
+                    continue
+                if not data.get('candidate'):
+                    await websocket.send_json({'error': 'Missing ICE candidate data'})
+                    continue
+                # Verify connection state before processing ICE candidate
+                if websocket.application_state != WebSocketState.CONNECTED:
+                    await websocket.send_json({'error': 'Cannot add ICE candidate - connection closed'})
+                    continue
+                await websocket.send_json({
+                    'type': 'webrtc_ice_candidate',
+                    'from': user_id,
+                    'to': target_user,
+                    'candidate': data.get('candidate')
+                })
             
             # Broadcast presence updates to all connected clients
             current_users = [user.decode('utf-8') for user in redis_client.smembers(redis_key)]
