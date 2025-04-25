@@ -129,10 +129,14 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
                 'timestamp': int(time.time())
             })
     except WebSocketDisconnect:
-        redis_client.srem(redis_key, user_id)
-        redis_client.hdel(f"connections:{appointment_id}", connection_id)
-        await websocket.close()
-        print(f"Client disconnected: {connection_id}")
+        try:
+            if websocket.application_state == WebSocketState.CONNECTED:
+                redis_client.srem(redis_key, user_id)
+                redis_client.hdel(f"connections:{appointment_id}", connection_id)
+                await websocket.close()
+                print(f"Client disconnected: {connection_id}")
+        except Exception as e:
+            print(f"Error during WebSocket cleanup: {str(e)}")
 
 # Include routers
 app.include_router(auth.router, prefix="", tags=["auth"])
