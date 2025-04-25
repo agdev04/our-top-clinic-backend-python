@@ -1,8 +1,14 @@
 from dotenv import load_dotenv
+import time
+import json
 import uuid
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Depends
+from fastapi.websockets import WebSocketState
+from models import Appointment
 from fastapi.middleware.cors import CORSMiddleware
 import redis
+from sqlalchemy.orm import Session
+from routers.db import get_db
 from fastapi.websockets import WebSocketDisconnect
 from routers import auth, messages, patients, providers, services, commission_rates, appointments
 
@@ -26,8 +32,6 @@ app.add_middleware(
     expose_headers=["*"]
 )
 
-
-
 # Include routers
 app.include_router(auth.router, prefix="", tags=["auth"])
 app.include_router(patients.router, prefix="/patients", tags=["patients"])
@@ -42,9 +46,11 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: dict[str, dict[str, WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, appointment_id: str):
+    async def connect(self, websocket: WebSocket, appointment_id: str, peer_id: str = None):
         await websocket.accept()
-        peer_id = str(uuid.uuid4())
+        
+        if not peer_id:
+            peer_id = str(uuid.uuid4())
         
         if appointment_id not in self.active_connections:
             self.active_connections[appointment_id] = {}
@@ -80,7 +86,21 @@ manager = ConnectionManager()
 
 @app.websocket("/ws/{appointment_id}")
 async def websocket_endpoint(websocket: WebSocket, appointment_id: str):
-    peer_id = await manager.connect(websocket, appointment_id)
+    # Receive peer_id from client in first message
+    first_message = await websocket.receive_text()
+    try:
+        message = json.loads(first_message)
+        peer_id = message.get('peer_id')
+        if not peer_id:
+            await websocket.send_json({"type": "error", "message": "peer_id is required"})
+            await websocket.close()
+            return
+    except:
+        await websocket.send_json({"type": "error", "message": "Invalid message format"})
+        await websocket.close()
+        return
+        
+    peer_id = await manager.connect(websocket, appointment_id, peer_id)
     try:
         while True:
             data = await websocket.receive_text()
