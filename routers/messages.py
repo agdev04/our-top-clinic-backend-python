@@ -6,7 +6,7 @@ from .db import get_db
 
 router = APIRouter()
 
-@router.post("/messages/")
+@router.post("/")
 def send_message(message_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
      if "receiver_id" not in message_data or "content" not in message_data:
          raise HTTPException(status_code=400, detail="receiver_id and content are required")
@@ -26,7 +26,7 @@ def send_message(message_data: dict, current_user=Depends(verify_clerk_token), d
      db.refresh(message)
      return message
  
-@router.get("/messages/{receiver_id}")
+@router.get("/{receiver_id}")
 def get_messages(receiver_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
      # Ensure current user is either the sender or receiver of the messages
      messages = db.query(Message).filter(
@@ -92,7 +92,7 @@ def get_parent_messages(current_user=Depends(verify_clerk_token), db: Session = 
      
      return users
  
-@router.get("/messages/{message_id}/replies")
+@router.get("/{message_id}/replies")
 def get_message_replies(message_id: int, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
      parent_message = db.query(Message).filter(Message.id == message_id).first()
      if not parent_message:
@@ -105,7 +105,7 @@ def get_message_replies(message_id: int, current_user=Depends(verify_clerk_token
      replies = db.query(Message).filter(Message.parent_message_id == message_id).all()
      return replies
  
-@router.post("/messages/{message_id}/reply")
+@router.post("/{message_id}/reply")
 def reply_to_message(message_id: int, message_data: dict, current_user=Depends(verify_clerk_token), db: Session = Depends(get_db)):
      parent_message = db.query(Message).filter(Message.id == message_id).first()
      if not parent_message:
