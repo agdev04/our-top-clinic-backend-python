@@ -43,4 +43,5 @@ COPY . .
 EXPOSE 3007
 
 # Run the application using Gunicorn
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:3007", "main:app"]
+# CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:3007", "main:app"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--forwarded-allow-ips=*", "--bind", "0.0.0.0:3007", "main:app"]
