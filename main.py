@@ -32,6 +32,9 @@ app.add_middleware(
 )
 
 # WebSocket endpoint for user presence
+# Track active WebSocket connections by appointment_id
+active_connections = {}
+
 @app.websocket("/ws/presence/{appointment_id}")
 async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Session = Depends(get_db)):
     if not websocket.url.path.startswith("/ws/presence/"):
@@ -48,6 +51,12 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
     try:
         await websocket.accept()
         redis_key = f"presence:{appointment_id}"
+        # Track rooms and users
+        rooms_key = f"rooms:{appointment_id}"
+        # Initialize room if it doesn't exist
+        if not redis_client.exists(rooms_key):
+            redis_client.hset(rooms_key, "users", json.dumps([]))
+            redis_client.expire(rooms_key, 86400) # 24 hours
         # Initialize connection tracking
         connection_id = f"{appointment_id}:{websocket.client.host}:{websocket.client.port}"
         # Track connection with timestamp
@@ -81,9 +90,39 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
             if action == 'join':
                 redis_client.sadd(redis_key, user_id)
                 redis_client.hset(f"connections:{appointment_id}", connection_id, json.dumps(user_id))
+                # Get existing users in room
+                existing_users = json.loads(redis_client.hget(rooms_key, "users") or "[]")
+                # Send list of existing users to new participant
+                await websocket.send_json({
+                    'type': 'existing_users',
+                    'users': [u for u in existing_users if u != user_id]
+                })
+                # Add user to room and notify others
+                if user_id not in existing_users:
+                    existing_users.append(user_id)
+                    redis_client.hset(rooms_key, "users", json.dumps(existing_users))
+                    # Broadcast new user to all connected clients
+                    for ws in active_connections.get(appointment_id, []):
+                        if ws != websocket:
+                            await ws.send_json({
+                                'type': 'user_connected',
+                                'user_id': user_id
+                            })
             elif action == 'leave':
                 redis_client.srem(redis_key, user_id)
                 redis_client.hdel(f"connections:{appointment_id}", connection_id)
+                # Remove user from room and notify others
+                existing_users = json.loads(redis_client.hget(rooms_key, "users") or "[]")
+                if user_id in existing_users:
+                    existing_users.remove(user_id)
+                    redis_client.hset(rooms_key, "users", json.dumps(existing_users))
+                    # Broadcast user disconnect to all connected clients
+                    for ws in active_connections.get(appointment_id, []):
+                        if ws != websocket:
+                            await ws.send_json({
+                                'type': 'user_disconnected',
+                                'user_id': user_id
+                            })
             elif action == 'offer':
                 target_user = data.get('target_user')
                 if target_user and isinstance(target_user, str):
@@ -138,6 +177,23 @@ async def websocket_presence(websocket: WebSocket, appointment_id: str, db: Sess
             if websocket.application_state == WebSocketState.CONNECTED:
                 redis_client.srem(redis_key, user_id)
                 redis_client.hdel(f"connections:{appointment_id}", connection_id)
+                # Remove from active connections
+                if appointment_id in active_connections:
+                    active_connections[appointment_id].remove(websocket)
+                    if not active_connections[appointment_id]:
+                        del active_connections[appointment_id]
+                # Cleanup empty rooms
+                existing_users = json.loads(redis_client.hget(rooms_key, "users") or "[]")
+                if user_id in existing_users:
+                    existing_users.remove(user_id)
+                    redis_client.hset(rooms_key, "users", json.dumps(existing_users))
+                    # Notify others about user disconnect
+                    for ws in active_connections.get(appointment_id, []):
+                        if ws != websocket:
+                            await ws.send_json({
+                                'type': 'user_disconnected',
+                                'user_id': user_id
+                            })
                 await websocket.close()
                 print(f"Client disconnected: {connection_id}")
         except Exception as e:
